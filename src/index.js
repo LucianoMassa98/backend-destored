@@ -39,13 +39,17 @@ const swaggerOptions = {
       description: 'API para la plataforma Destored - Conectando profesionales tecnológicos con clientes',
       contact: {
         name: 'Destored Team',
-        email: 'dev@destored.com'
+        email: 'info@destored.org'
       }
     },
     servers: [
       {
         url: `http://localhost:${PORT}`,
         description: 'Servidor de desarrollo'
+      },
+      {
+        url: `https://api-destored.up.railway.app`,
+        description: 'Servidor de producción',
       }
     ],
     components: {
