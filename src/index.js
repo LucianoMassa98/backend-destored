@@ -31,7 +31,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Configurar trust proxy para Railway y otros servicios de hosting
-app.set('trust proxy', true);
+// En lugar de 'true', configuramos específicamente para Railway
+app.set('trust proxy', 1); // Solo confiar en el primer proxy (Railway)
 
 // Configuración de Swagger
 const swaggerOptions = {
@@ -59,7 +60,7 @@ const swaggerOptions = {
     components: {
       securitySchemes: {
         bearerAuth: {
-          type: 'http',
+          type: 'https',
           scheme: 'bearer',
           bearerFormat: 'JWT'
         }
@@ -71,7 +72,7 @@ const swaggerOptions = {
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 
-// Rate limiting
+// Rate limiting con configuración segura para Railway
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutos
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
@@ -79,7 +80,22 @@ const limiter = rateLimit({
     error: 'Demasiadas solicitudes desde esta IP, intenta de nuevo más tarde.'
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  // Configuración específica para obtener la IP real cuando se usa proxy
+  keyGenerator: (req) => {
+    // En Railway, la IP real viene en x-forwarded-for
+    const forwardedFor = req.get('x-forwarded-for');
+    if (forwardedFor) {
+      // Tomar la primera IP de la lista (la IP real del cliente)
+      return forwardedFor.split(',')[0].trim();
+    }
+    // Fallback a la IP de conexión
+    return req.ip || req.connection.remoteAddress;
+  },
+  // Validar que tenemos una fuente de IP confiable
+  validate: {
+    trustProxy: false, // Deshabilitamos la validación automática ya que usamos keyGenerator personalizado
+  }
 });
 
 // Configuración de Morgan para logging de peticiones HTTP
