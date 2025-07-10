@@ -29,6 +29,9 @@ const analyticsRoutes = require('./routes/api/v1/analytics.routes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Configurar trust proxy para Railway y otros servicios de hosting
+app.set('trust proxy', true);
+
 // Configuración de Swagger
 const swaggerOptions = {
   definition: {
