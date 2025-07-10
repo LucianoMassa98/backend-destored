@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 const passport = require('passport');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
+const morgan = require('morgan');
 require('dotenv').config();
 
 // Importar configuraciones
@@ -81,9 +82,29 @@ const limiter = rateLimit({
   legacyHeaders: false
 });
 
+// Configuración de Morgan para logging de peticiones HTTP
+const morganFormat = process.env.NODE_ENV === 'production' 
+  ? 'combined' 
+  : ':method :url :status :res[content-length] - :response-time ms :user-agent';
+
+const morganOptions = {
+  stream: {
+    write: (message) => {
+      // Remover el salto de línea que Morgan agrega automáticamente
+      const cleanMessage = message.trim();
+      logger.info(cleanMessage);
+    }
+  },
+  skip: (req, res) => {
+    // Omitir logging para rutas de health check en producción
+    return process.env.NODE_ENV === 'production' && req.url === '/health';
+  }
+};
+
 // Middlewares globales
 app.use(helmet());
 app.use(corsHandler);
+app.use(morgan(morganFormat, morganOptions));
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
