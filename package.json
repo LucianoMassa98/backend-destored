@@ -9,6 +9,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:cors": "node test-cors.js",
     "migrate": "npx sequelize-cli db:migrate",
     "migrate:undo": "npx sequelize-cli db:migrate:undo",
     "migrate:status": "npx sequelize-cli db:migrate:status",
@@ -21,7 +22,8 @@
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"src/**/*.js\"",
-    "setup": "npm install && npm run db:create && npm run migrate && npm run seed"
+    "setup": "npm install && npm run db:create && npm run migrate && npm run seed",
+    "deploy:check": "bash deploy-check.sh"
   },
   "keywords": [
     "destored",

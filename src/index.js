@@ -16,6 +16,7 @@ const logger = require('./utils/logger');
 // Importar middlewares
 const errorHandler = require('./middlewares/error.handler');
 const corsHandler = require('./middlewares/cors.handler');
+const railwayCorsHandler = require('./middlewares/railway-cors.handler');
 
 // Importar rutas
 const authRoutes = require('./routes/api/v1/auth.routes');
@@ -101,7 +102,7 @@ const limiter = rateLimit({
 // Configuración de Morgan para logging de peticiones HTTP
 const morganFormat = process.env.NODE_ENV === 'production' 
   ? 'combined' 
-  : ':method :url :status :res[content-length] - :response-time ms :user-agent';
+  : ':method :url :status :res[content-length] - :response-time ms';
 
 const morganOptions = {
   stream: {
@@ -117,9 +118,33 @@ const morganOptions = {
   }
 };
 
-// Middlewares globales
-app.use(helmet());
+// También agregar Morgan directamente a la consola en desarrollo
+const morganConsole = process.env.NODE_ENV !== 'production' 
+  ? morgan(':method :url :status :res[content-length] - :response-time ms', {
+      skip: (req, res) => req.url === '/health'
+    })
+  : null;
+
+// Middlewares globales - CORS debe ir primero
+// En Railway, usar middleware específico para CORS más permisivo
+if (process.env.NODE_ENV === 'production') {
+  app.use(railwayCorsHandler);
+}
 app.use(corsHandler);
+
+// Middleware para manejar preflight requests explícitamente
+app.options('*', corsHandler);
+
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: false // Deshabilitamos CSP para evitar problemas con CORS
+}));
+// Morgan para logging de peticiones - primero a consola en desarrollo
+if (morganConsole) {
+  app.use(morganConsole);
+}
+// Morgan para logging a archivos
 app.use(morgan(morganFormat, morganOptions));
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
@@ -149,6 +174,16 @@ app.get('/health', (req, res) => {
     message: 'Destored API funcionando correctamente',
     timestamp: new Date().toISOString(),
     version: '1.0.0'
+  });
+});
+
+// Ruta para probar CORS
+app.get('/api/v1/cors-test', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'CORS funcionando correctamente',
+    origin: req.get('Origin') || 'No origin header',
+    timestamp: new Date().toISOString()
   });
 });
 

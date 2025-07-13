@@ -7,17 +7,43 @@ const corsOptions = {
       'http://localhost:3000',
       'http://localhost:3001',
       'http://localhost:5173',
+      'https://api-destored.up.railway.app',
       process.env.FRONTEND_URL,
-      process.env.ADMIN_PANEL_URL
+      process.env.ADMIN_PANEL_URL,
+      // Permitir Swagger UI y herramientas de desarrollo
+      'https://petstore.swagger.io',
+      'http://petstore.swagger.io',
     ].filter(Boolean);
 
-    // Permitir requests sin origin (mobile apps, Postman, etc.)
+    // En desarrollo, permitir cualquier origen localhost
+    if (process.env.NODE_ENV === 'development') {
+      if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+    }
+
+    // Permitir requests sin origin (mobile apps, Postman, curl, etc.)
     if (!origin) return callback(null, true);
+
+    // En producción, permitir herramientas de testing y documentación
+    if (process.env.NODE_ENV === 'production') {
+      // Permitir Swagger UI, Postman, y herramientas similares
+      if (origin.includes('swagger') || origin.includes('postman') || 
+          origin.includes('railway.app') || origin.includes('destored')) {
+        return callback(null, true);
+      }
+    }
 
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      callback(new Error('No permitido por CORS'));
+      // En lugar de rechazar completamente, log el origen y permitir en desarrollo
+      console.log(`CORS: Origen no permitido: ${origin}`);
+      if (process.env.NODE_ENV === 'development') {
+        callback(null, true);
+      } else {
+        callback(new Error('No permitido por CORS'));
+      }
     }
   },
   credentials: true,
@@ -29,10 +55,14 @@ const corsOptions = {
     'Accept',
     'Authorization',
     'Cache-Control',
-    'Pragma'
+    'Pragma',
+    'User-Agent',
+    'Referer'
   ],
   exposedHeaders: ['X-Total-Count', 'X-Total-Pages'],
-  maxAge: 86400 // 24 horas
+  maxAge: 86400, // 24 horas
+  preflightContinue: false,
+  optionsSuccessStatus: 200
 };
 
 module.exports = cors(corsOptions);
