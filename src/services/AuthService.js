@@ -96,10 +96,18 @@ class AuthService {
     });
 
     // Generar tokens
+    const roleTranslations = {
+      'client': 'cliente',
+      'professional': 'profesional',
+      'admin': 'administrador',
+      'super_admin': 'super_administrador',
+      'gerencia': 'gerencia'
+    };
+
     const tokenPayload = {
       id: user.id,
       email: user.email,
-      role: user.role
+      role: roleTranslations[user.role] || user.role
     };
 
     const accessToken = AuthUtils.generateToken(tokenPayload);

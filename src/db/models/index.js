@@ -66,6 +66,10 @@ const defineAssociations = () => {
   Project.hasMany(Application, { foreignKey: 'project_id', as: 'applications' });
   Application.belongsTo(Project, { foreignKey: 'project_id', as: 'project' });
 
+  // Usuario - Aplicaciones (como revisor)
+  User.hasMany(Application, { foreignKey: 'reviewed_by', as: 'reviewedApplications' });
+  Application.belongsTo(User, { foreignKey: 'reviewed_by', as: 'reviewer' });
+
   // Usuario - Reseñas (como autor)
   User.hasMany(Review, { foreignKey: 'reviewer_id', as: 'givenReviews' });
   Review.belongsTo(User, { foreignKey: 'reviewer_id', as: 'reviewer' });

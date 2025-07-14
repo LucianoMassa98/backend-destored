@@ -531,6 +531,51 @@ class ProjectService {
 
     return project;
   }
+
+  /**
+   * Evaluar aplicación de proyecto
+   */
+  static async evaluateProjectApplication(projectId, applicationId, evaluationData, clientId) {
+    const ApplicationService = require('./ApplicationService');
+    
+    const application = await ApplicationService.getApplicationById(applicationId, clientId, 'client');
+    
+    if (application.project_id !== projectId) {
+      throw new Error('La aplicación no pertenece a este proyecto');
+    }
+
+    return await ApplicationService.evaluateApplication(applicationId, evaluationData, clientId);
+  }
+
+  /**
+   * Aprobar aplicación de proyecto
+   */
+  static async approveProjectApplication(projectId, applicationId, approvalData, clientId) {
+    const ApplicationService = require('./ApplicationService');
+    
+    const application = await ApplicationService.getApplicationById(applicationId, clientId, 'client');
+    
+    if (application.project_id !== projectId) {
+      throw new Error('La aplicación no pertenece a este proyecto');
+    }
+
+    return await ApplicationService.approveApplication(applicationId, approvalData, clientId);
+  }
+
+  /**
+   * Rechazar aplicación de proyecto
+   */
+  static async rejectProjectApplication(projectId, applicationId, rejectionData, clientId) {
+    const ApplicationService = require('./ApplicationService');
+    
+    const application = await ApplicationService.getApplicationById(applicationId, clientId, 'client');
+    
+    if (application.project_id !== projectId) {
+      throw new Error('La aplicación no pertenece a este proyecto');
+    }
+
+    return await ApplicationService.rejectApplication(applicationId, rejectionData, clientId);
+  }
 }
 
 module.exports = ProjectService;

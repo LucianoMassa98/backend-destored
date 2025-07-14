@@ -35,6 +35,20 @@ class User extends Model {
     delete userData.reset_password_expires;
     delete userData.google_id;
     delete userData.linkedin_id;
+    
+    // Traducir roles al español para el frontend
+    const roleTranslations = {
+      'client': 'cliente',
+      'professional': 'profesional',
+      'admin': 'administrador',
+      'super_admin': 'super_administrador',
+      'gerencia': 'gerencia'
+    };
+    
+    if (userData.role && roleTranslations[userData.role]) {
+      userData.role = roleTranslations[userData.role];
+    }
+    
     return userData;
   }
 

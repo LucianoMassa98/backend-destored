@@ -13,7 +13,28 @@ class Application extends Model {
    * Método para verificar si la aplicación puede ser aceptada
    */
   canBeAccepted() {
-    return this.status === 'under_review';
+    return ['pending', 'under_review'].includes(this.status);
+  }
+
+  /**
+   * Método para verificar si la aplicación puede ser evaluada
+   */
+  canBeEvaluated() {
+    return this.status === 'pending';
+  }
+
+  /**
+   * Método para verificar si es una aplicación activa
+   */
+  isActive() {
+    return ['pending', 'under_review'].includes(this.status);
+  }
+
+  /**
+   * Método para verificar si la aplicación está finalizada
+   */
+  isFinalized() {
+    return ['accepted', 'rejected', 'withdrawn', 'expired'].includes(this.status);
   }
 
   /**
@@ -200,5 +221,26 @@ Application.init(
     }
   }
 );
+
+// Definir asociaciones
+Application.associate = function(models) {
+  // Una aplicación pertenece a un profesional
+  Application.belongsTo(models.User, {
+    foreignKey: 'professional_id',
+    as: 'professional'
+  });
+
+  // Una aplicación pertenece a un proyecto
+  Application.belongsTo(models.Project, {
+    foreignKey: 'project_id',
+    as: 'project'
+  });
+
+  // Una aplicación puede tener un revisor (cliente que la revisó)
+  Application.belongsTo(models.User, {
+    foreignKey: 'reviewed_by',
+    as: 'reviewer'
+  });
+};
 
 module.exports = Application;

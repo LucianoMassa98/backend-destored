@@ -205,6 +205,39 @@ router.post('/',
 
 /**
  * @swagger
+ * /api/v1/projects/my-projects:
+ *   get:
+ *     summary: Obtener proyectos del usuario autenticado
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Proyectos del usuario
+ *       401:
+ *         description: Token requerido
+ */
+router.get('/my-projects', authenticateJWT, validatePagination, async (req, res, next) => {
+  try {
+    const result = await ProjectService.getUserProjects(
+      req.user.id,
+      req.user.role,
+      req.query.status,
+      req.pagination
+    );
+    ResponseUtils.paginated(res, result.projects, result.pagination, 'Proyectos obtenidos exitosamente');
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
  * /api/v1/projects/{projectId}:
  *   get:
  *     summary: Obtener proyecto por ID
@@ -399,33 +432,205 @@ router.get('/:projectId/applications', authenticateJWT, async (req, res, next) =
 
 /**
  * @swagger
- * /api/v1/projects/my-projects:
- *   get:
- *     summary: Obtener proyectos del usuario autenticado
+ * /api/v1/projects/{projectId}/applications/{applicationId}/evaluate:
+ *   put:
+ *     summary: Evaluar aplicación específica de un proyecto
  *     tags: [Projects]
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: query
- *         name: status
+ *       - in: path
+ *         name: projectId
+ *         required: true
  *         schema:
  *           type: string
+ *           format: uuid
+ *       - in: path
+ *         name: applicationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               priority_score:
+ *                 type: number
+ *                 minimum: 0
+ *                 maximum: 100
+ *               client_feedback:
+ *                 type: string
  *     responses:
  *       200:
- *         description: Proyectos del usuario
- *       401:
- *         description: Token requerido
+ *         description: Aplicación evaluada exitosamente
+ *       403:
+ *         description: Sin permisos
+ *       404:
+ *         description: Proyecto o aplicación no encontrada
  */
-router.get('/my-projects', authenticateJWT, validatePagination, async (req, res, next) => {
+router.put('/:projectId/applications/:applicationId/evaluate', authenticateJWT, async (req, res, next) => {
   try {
-    const result = await ProjectService.getUserProjects(
-      req.user.id,
-      req.user.role,
-      req.query.status,
-      req.pagination
+    // Solo clientes pueden evaluar aplicaciones
+    if (req.user.role !== 'client') {
+      return ResponseUtils.forbidden(res, 'Solo los clientes pueden evaluar aplicaciones');
+    }
+
+    const application = await ProjectService.evaluateProjectApplication(
+      req.params.projectId,
+      req.params.applicationId,
+      req.body,
+      req.user.id
     );
-    ResponseUtils.paginated(res, result.projects, result.pagination, 'Proyectos obtenidos exitosamente');
+
+    ResponseUtils.success(res, application, 'Aplicación evaluada exitosamente');
   } catch (error) {
+    if (error.message.includes('no encontrada') || error.message.includes('no pertenece')) {
+      return ResponseUtils.notFound(res, error.message);
+    }
+    if (error.message.includes('permisos')) {
+      return ResponseUtils.forbidden(res, error.message);
+    }
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/projects/{projectId}/applications/{applicationId}/approve:
+ *   put:
+ *     summary: Aprobar aplicación específica de un proyecto
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: path
+ *         name: applicationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               client_feedback:
+ *                 type: string
+ *               final_rate:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Aplicación aprobada exitosamente
+ *       403:
+ *         description: Sin permisos
+ *       404:
+ *         description: Proyecto o aplicación no encontrada
+ */
+router.put('/:projectId/applications/:applicationId/approve', authenticateJWT, async (req, res, next) => {
+  try {
+    // Solo clientes pueden aprobar aplicaciones
+    if (req.user.role !== 'client') {
+      return ResponseUtils.forbidden(res, 'Solo los clientes pueden aprobar aplicaciones');
+    }
+
+    const application = await ProjectService.approveProjectApplication(
+      req.params.projectId,
+      req.params.applicationId,
+      req.body,
+      req.user.id
+    );
+
+    ResponseUtils.success(res, application, 'Aplicación aprobada exitosamente');
+  } catch (error) {
+    if (error.message.includes('no encontrada') || error.message.includes('no pertenece')) {
+      return ResponseUtils.notFound(res, error.message);
+    }
+    if (error.message.includes('permisos')) {
+      return ResponseUtils.forbidden(res, error.message);
+    }
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/projects/{projectId}/applications/{applicationId}/reject:
+ *   put:
+ *     summary: Rechazar aplicación específica de un proyecto
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: path
+ *         name: applicationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 minLength: 10
+ *               client_feedback:
+ *                 type: string
+ *               send_feedback_email:
+ *                 type: boolean
+ *             required:
+ *               - reason
+ *     responses:
+ *       200:
+ *         description: Aplicación rechazada exitosamente
+ *       403:
+ *         description: Sin permisos
+ *       404:
+ *         description: Proyecto o aplicación no encontrada
+ */
+router.put('/:projectId/applications/:applicationId/reject', authenticateJWT, async (req, res, next) => {
+  try {
+    // Solo clientes pueden rechazar aplicaciones
+    if (req.user.role !== 'client') {
+      return ResponseUtils.forbidden(res, 'Solo los clientes pueden rechazar aplicaciones');
+    }
+
+    const application = await ProjectService.rejectProjectApplication(
+      req.params.projectId,
+      req.params.applicationId,
+      req.body,
+      req.user.id
+    );
+
+    ResponseUtils.success(res, application, 'Aplicación rechazada exitosamente');
+  } catch (error) {
+    if (error.message.includes('no encontrada') || error.message.includes('no pertenece')) {
+      return ResponseUtils.notFound(res, error.message);
+    }
+    if (error.message.includes('permisos')) {
+      return ResponseUtils.forbidden(res, error.message);
+    }
     next(error);
   }
 });

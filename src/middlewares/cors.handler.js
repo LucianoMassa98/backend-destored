@@ -8,6 +8,7 @@ const corsOptions = {
       'http://localhost:3001',
       'http://localhost:5173',
       'https://api-destored.up.railway.app',
+      'https://dashboard.destored.org',
       process.env.FRONTEND_URL,
       process.env.ADMIN_PANEL_URL,
       // Permitir Swagger UI y herramientas de desarrollo

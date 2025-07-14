@@ -24,6 +24,7 @@ const userRoutes = require('./routes/api/v1/users.routes');
 const professionalRoutes = require('./routes/api/v1/professionals.routes');
 const clientRoutes = require('./routes/api/v1/clients.routes');
 const projectRoutes = require('./routes/api/v1/projects.routes');
+const applicationRoutes = require('./routes/api/v1/applications.routes');
 const fileRoutes = require('./routes/api/v1/files.routes');
 const notificationRoutes = require('./routes/api/v1/notifications.routes');
 const analyticsRoutes = require('./routes/api/v1/analytics.routes');
@@ -157,12 +158,13 @@ app.use(passport.initialize());
 // Documentación API
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// Rutas principales
+// Rutas API
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/professionals', professionalRoutes);
 app.use('/api/v1/clients', clientRoutes);
 app.use('/api/v1/projects', projectRoutes);
+app.use('/api/v1/applications', applicationRoutes);
 app.use('/api/v1/files', fileRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);

@@ -275,6 +275,63 @@ class EmailService {
   }
 
   /**
+   * Email de feedback de aplicación rechazada
+   */
+  async sendApplicationRejectionFeedback(professionalEmail, professionalName, projectTitle, feedback) {
+    const subject = `Feedback sobre tu aplicación para "${projectTitle}"`;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Feedback de Aplicación</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 8px; }
+          .content { padding: 20px 0; }
+          .feedback-box { background-color: #f1f3f4; padding: 15px; border-radius: 6px; margin: 15px 0; }
+          .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; }
+          .btn { display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 6px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Feedback sobre tu aplicación</h1>
+          </div>
+          
+          <div class="content">
+            <p>Hola ${professionalName},</p>
+            
+            <p>Aunque tu aplicación para <strong>"${projectTitle}"</strong> no fue seleccionada en esta ocasión, el cliente quiso compartir algunos comentarios contigo que podrían ser útiles para futuras aplicaciones:</p>
+            
+            <div class="feedback-box">
+              <strong>Feedback del cliente:</strong><br>
+              ${feedback}
+            </div>
+            
+            <p>Te animamos a seguir aplicando a proyectos que coincidan con tu experiencia. ¡No te desanimes!</p>
+            
+            <p style="text-align: center;">
+              <a href="${process.env.FRONTEND_URL}/projects" class="btn">Ver más proyectos</a>
+            </p>
+          </div>
+          
+          <div class="footer">
+            <p>Este es un email automático, por favor no respondas a este mensaje.</p>
+            <p>&copy; 2024 Destored. Todos los derechos reservados.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return await this.sendEmail(professionalEmail, subject, html);
+  }
+
+  /**
    * Convertir HTML básico a texto plano
    */
   htmlToText(html) {
